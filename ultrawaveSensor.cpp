@@ -1,3 +1,4 @@
+#include <string>
 /*
  * @brief 공통부
  * 
@@ -5,7 +6,7 @@
  */
 
 //purpose: 초음파 센서로 거리 측정하고 그 값을 리턴.
-long measureDistance(int TRIG_PIN_NUMBER, int ECHO_PIN_NUMBER);
+long getDistance(int TRIG_PIN_NUMBER, int ECHO_PIN_NUMBER);
 
 /**
  * @brief level1 
@@ -39,7 +40,7 @@ int changeWaterRateSetting(int waterRateSettingValue){
  * purpose: Servo motor의 각도를 셋팅해주는 함수
  * 
  * @include 
- * global: measureDistance()
+ * global: getDistance()
  * level2: isChangedInclination()
  * level3: turnServo()
  * 
@@ -56,9 +57,9 @@ void settingServoAngle(){
 
     //서보모터 작동 시작
     turnServo(95);//서보모터를 95도로 설정
-    distanceR = measureDistance();
+    distanceR = getDistance();
     turnServo(85);//서보모터를 85도로 설정
-    distanceL = measureDistance();
+    distanceL = getDistance();
         
         //좌우 비교 시작
     if(distanceL > distanceR)//오른쪽이 작다면 오른쪽으로 돌아야함
@@ -102,7 +103,7 @@ void turnServo(int angle);
  * 
  * @return long 
  */
-long measureVolume(){
+long getVolume(){
     /**
      * global: 
      * DISTANCE_WIDTH: 정수기의 가로 길이
@@ -119,8 +120,8 @@ long measureVolume(){
     int cnt;//서보모터가 몇 번 움직였는지
     while ((distanceR >= DISTANCE_WIDTH))//정수기 가로길이보다 초음파 결과값이 크면 멈춰야함.
     {
-        distanceL = measureDistance(ULTRA_LEFT_TRIG, ULTRA_LEFT_ECHO);
-        distanceR = measureDistance(ULTRA_RIGHT_TRIG, ULTRA_RIGHT_ECHO);
+        distanceL = getDistance(ULTRA_LEFT_TRIG, ULTRA_LEFT_ECHO);
+        distanceR = getDistance(ULTRA_RIGHT_TRIG, ULTRA_RIGHT_ECHO);
         upSensorByMotor(stepRight);
         upSensorByMotor(stepLeft);
 
@@ -158,13 +159,54 @@ long getRadius(long distanceL, long distanceR);
 long getHeight(int cnt);
 
 /**
- * @brief level1 정수기의 출수를 담당하는 함수
+ * @brief level1 
+ * purpose: 정수기의 출수를 담당하는 함수
  * 여기부터 하면 됨.
  * @return int 
  */
-int turnOnWater(){
+int turnOnWater(long totalWaterVolume){
+    //유수 측정 센서에서 
+    long outWaterVolume = 0;
 
+    turnOnPump();
+    //총 추출해야하는 물의 양보다 현재 유수 측정 센서에 감지된 양이 적다면
+    while (outWaterVolume <= totalWaterVolume)
+    {
+        outWaterVolume = getCurrentWaterVolume();
+    }
+    turnOffPump();
+    
 }
+
+/**
+ * @brief level2
+ * purpose: 압력 펌프를 가동시켜서 물을 끌어올리는 함수
+ * 
+ */
+void turnOnPump();
+/**
+ * @brief level2
+ * purpose: 압력 펌프를 가동 중지시키는 함수
+ * 
+ */
+void turnOffPump();
+/**
+ * @brief level2
+ * purpose: 현재 출력된 물의 양이 얼마인지 유량 측정 센서를 통해 측정하는 함수
+ * 
+ * @return long 
+ */
+long getCurrentWaterVolume();
+
+/**
+ * @brief level1
+ * purpose: lcd에 어떤 문자를 출력할지 정해주는 함수.
+ * 기본 값으로 출수 퍼센트를 표시함.
+ * 오버라이딩으로 출수 버튼을 눌렀을 때 단계에 따라 측정 중, 출수 중 등의 메세지를 띄우기.
+ */
+void displayLCD(int waterRateSettingValue);
+void displayLCD(string displayStr);
+
 
 /**
  * @brief 전역 변수 
@@ -215,12 +257,10 @@ void loop(){
         if(fixedServoAngle)
         
         //스텝모터 작동 시작
-        cupVolume = measureVolume();
+        cupVolume = getVolume();
 
         //출수 시작 전 물의 양 결정
         waterVolume = cupVolume * (waterRateSettingValue/100);
-
-        
 
         
     }
