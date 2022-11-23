@@ -1,4 +1,5 @@
 #include <string>
+using namespace std;
 /*
  * @brief 공통부
  * 
@@ -88,7 +89,7 @@ void settingServoAngle(){
  * 
  * 증감이 바뀌는 순간 global 변수 fixedServoAngle 에 그 각도를 저장하고 return true 반환.
  */
-bool isChangedInclination();
+bool isChangedInclination(long startAngle, long endAngle);
 
 /**
  * @brief level3 
@@ -147,7 +148,7 @@ long getVolume(){
  * STEPPER_ANGLE을 참고하여 1call 당 1STEPPER_ANGLE씩 돌려야함.
  * @param Stpper 객체 레퍼런스를 사용함.
  */
-void upSensorByMotor(Stepper *stepper);
+void upSensorByMotor(Stepper *stepperL, Stepper *stepperR);
 
 //global 변수 fixedServoAngle을 사용하여 계산할 것.
 //미구현된 사항: 서보모터 각도에 따른 길이 계산 공식 미적용 추가 바람.
@@ -239,13 +240,12 @@ void setup(){
 
 void loop(){
     int waterRateSettingValue = 75;//디폴트가 75%로 설정되어 있음.
-    long distance, distanceL, distanceR;
     long cupVolume;
     long waterVolume;
     bool getStartButtonDown;//출수 버튼이 눌렸는가?
     bool getChangeButtonDonw;//설정 변경 버튼이 눌렸는가?
-    getStartButtonDown = true;//출수 버튼이 눌렸는지 감지하는 함수
-    getChangeButtonDonw = true;//설정 변경 버튼이 눌렸는지 감지하는 함수
+    getStartButtonDown = false;//출수 버튼이 눌렸는지 감지하는 함수
+    getChangeButtonDonw = false;//설정 변경 버튼이 눌렸는지 감지하는 함수
 
     if(getStartButtonDown)//출수 버튼이 눌린 것이 감지되었을때
     {
@@ -254,14 +254,19 @@ void loop(){
          * @exception
          */
         //fixedServoAngle 이 물구멍에서 벗어나는 각도에 컵이 있으면 에러 발생시키기.
-        if(fixedServoAngle)
-        
+        settingServoAngle();
+
         //스텝모터 작동 시작
+        //내부에 upSensorByMotor 함수 작동
+        //초음파 센서를 위로 올리면서 컵의 평균 반지름 측정
+        //높이를 측정하여 부피 계산하는 함수
         cupVolume = getVolume();
 
         //출수 시작 전 물의 양 결정
         waterVolume = cupVolume * (waterRateSettingValue/100);
 
+        //정해진 물 용량을 출력하는 함수
+        turnOnWater(waterVolume);
         
     }
     if (getChangeButtonDonw)
