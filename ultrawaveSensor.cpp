@@ -3,6 +3,30 @@
 #include<Stepper.h>
 
 using namespace std;
+
+double PI = 3.141592;
+long DISTANCE_WIDTH;//정수기 전원을 켰을 때 측정하고 값을 변경하지 않음.
+long fixedServoAngle;//서보모터를 돌리면서 마지막으로 고정된 서보모터의 각도
+
+//오른쪽 초음파 센서 
+int ULTRA_RIGHT_TRIG;//초음파 발사
+int ULTRA_RIGHT_ECHO;//초음파 받음
+
+//왼쪽 초음파 센서
+int ULTRA_LEFT_TRIG;//초음파 발사
+int ULTRA_LEFT_ECHO;//초음파 받음
+
+//스텝 모터 한번당 회전하는 각도.
+//필요시 자료형 변환할 것.
+int STEPPER_ANGLE;
+//Stepper 객체 레퍼런스
+Stepper stepRight;
+Stepper stepLeft;
+
+Servo servoL;
+Servo servoR;
+
+
 /*
  * @brief 공통부
  * 
@@ -255,27 +279,7 @@ void displayLCD(string displayStr);
  * 서보모터는 사용자 기준 오른쪽을 기준으로 한다.
  * 
  */
-double PI = 3.141592;
-long DISTANCE_WIDTH;//정수기 전원을 켰을 때 측정하고 값을 변경하지 않음.
-long fixedServoAngle;//서보모터를 돌리면서 마지막으로 고정된 서보모터의 각도
 
-//오른쪽 초음파 센서 
-int ULTRA_RIGHT_TRIG;//초음파 발사
-int ULTRA_RIGHT_ECHO;//초음파 받음
-
-//왼쪽 초음파 센서
-int ULTRA_LEFT_TRIG;//초음파 발사
-int ULTRA_LEFT_ECHO;//초음파 받음
-
-//스텝 모터 한번당 회전하는 각도.
-//필요시 자료형 변환할 것.
-int STEPPER_ANGLE;
-//Stepper 객체 레퍼런스
-Stepper stepRight;
-Stepper stepLeft;
-
-Servo servoL;
-Servo servoR;
 
 void setup(){
     //위 전역변수 값 설정
