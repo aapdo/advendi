@@ -1,4 +1,7 @@
 #include <string>
+#include<Servo.h>
+#include<Stepper.h>
+
 using namespace std;
 /*
  * @brief 공통부
@@ -7,7 +10,21 @@ using namespace std;
  */
 
 //purpose: 초음파 센서로 거리 측정하고 그 값을 리턴.
-long getDistance(int TRIG_PIN_NUMBER, int ECHO_PIN_NUMBER);
+long getDistance(int TRIG_PIN_NUMBER, int ECHO_PIN_NUMBER){
+    long duration, distance;
+    digitalWrite(TRIG_PIN_NUMBER, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIG_PIN_NUMBER, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN_NUMBER, LOW);
+
+    duration = pulseIn(ECHO, HIGH); //물체에 반사되어돌아온 초음파의 시간을 변수에 저장합니다.
+
+    //cm 로 환산
+    distance = duration * 17 / 1000;
+
+    return distance;
+}
 
 /**
  * @brief level1 
@@ -87,6 +104,9 @@ void settingServoAngle(){
  * @return true 
  * @return false 
  * 
+ * @include 
+ * turnServo()
+ * 
  * 증감이 바뀌는 순간 global 변수 fixedServoAngle 에 그 각도를 저장하고 return true 반환.
  */
 bool isChangedInclination(long startAngle, long endAngle);
@@ -97,12 +117,18 @@ bool isChangedInclination(long startAngle, long endAngle);
  * 
  * @param angle 
  */
-void turnServo(int angle);
+void turnServo(Servo servo, int angle){
+    servo.write(angle);
+}
 
 /**
  * @brief level1 컵의 총 부피를 구하는 함수
  * 
  * @return long 
+ * @include
+ * global: getDistance
+ * level2: upSensorByMotor()
+ * 
  */
 long getVolume(){
     /**
@@ -152,18 +178,33 @@ void upSensorByMotor(Stepper *stepperL, Stepper *stepperR);
 
 //global 변수 fixedServoAngle을 사용하여 계산할 것.
 //미구현된 사항: 서보모터 각도에 따른 길이 계산 공식 미적용 추가 바람.
+/**
+ * @brief level2
+ * purpose: 좌우의 초음파 센서에서 측정된 값을 바탕으로 컵의 반지름을 구하는 함수.
+ * @param distanceL 
+ * @param distanceR 
+ * @return long 
+ */
 long getRadius(long distanceL, long distanceR);
 
 //cnt 와
 //전역변수: STEPPER_ANGLE 로 
 //높이를 구하는 함수.
+/**
+ * @brief level2
+ * purpose: 스텝모터의 회전당 올라가는 높이와 회전 수를 곱하여 컵의 높이를 구하는 함수.
+ * @param cnt 
+ * @return long 
+ */
 long getHeight(int cnt);
 
 /**
  * @brief level1 
  * purpose: 정수기의 출수를 담당하는 함수
- * 여기부터 하면 됨.
  * @return int 
+ * 
+ * @include
+ * 
  */
 int turnOnWater(long totalWaterVolume){
     //유수 측정 센서에서 
@@ -233,33 +274,48 @@ int STEPPER_ANGLE;
 Stepper stepRight;
 Stepper stepLeft;
 
+Servo servoL;
+Servo servoR;
+
 void setup(){
     //위 전역변수 값 설정
+    Serial.begin(9600);
+    servoL.attach(servoLPin);
+    servoR.attach(servoRPin);
+
 }
 
 
 void loop(){
-    int waterRateSettingValue = 75;//디폴트가 75%로 설정되어 있음.
+    //디폴트는 컵 용량의 75%로 설정되어 있음.
+    int waterRateSettingValue = 75;
+    //컵의 용량
     long cupVolume;
+    //따라야하는 물의 용량
     long waterVolume;
-    bool getStartButtonDown;//출수 버튼이 눌렸는가?
-    bool getChangeButtonDonw;//설정 변경 버튼이 눌렸는가?
-    getStartButtonDown = false;//출수 버튼이 눌렸는지 감지하는 함수
-    getChangeButtonDonw = false;//설정 변경 버튼이 눌렸는지 감지하는 함수
+    //출수 버튼이 눌렸는가?
+    bool getStartButtonDown;
+    //설정 변경 버튼이 눌렸는가?
+    bool getChangeButtonDonw;
+    //출수 버튼이 눌렸는지 감지하는 함수
+    getStartButtonDown = false;
+    //설정 변경 버튼이 눌렸는지 감지하는 함수
+    getChangeButtonDown = false;
 
-    if(getStartButtonDown)//출수 버튼이 눌린 것이 감지되었을때
+    //출수 버튼이 눌린 것이 감지되었을때
+    if(getStartButtonDown)
     {
         /**
-         * @brief Construct a new if object
-         * @exception
+         * @exception fixedServoAngle 이 물구멍에서 벗어나는 각도에 컵이 있으면 에러 발생시키기.
+
          */
-        //fixedServoAngle 이 물구멍에서 벗어나는 각도에 컵이 있으면 에러 발생시키기.
         settingServoAngle();
 
-        //스텝모터 작동 시작
-        //내부에 upSensorByMotor 함수 작동
-        //초음파 센서를 위로 올리면서 컵의 평균 반지름 측정
-        //높이를 측정하여 부피 계산하는 함수
+        /**스텝모터 작동 시작
+        * 내부에 upSensorByMotor 함수 작동
+        * 초음파 센서를 위로 올리면서 컵의 평균 반지름 측정
+        * 높이를 측정하여 부피 계산하는 함수
+        */
         cupVolume = getVolume();
 
         //출수 시작 전 물의 양 결정
@@ -269,10 +325,8 @@ void loop(){
         turnOnWater(waterVolume);
         
     }
-    if (getChangeButtonDonw)
+    if (getChangeButtonDown)
     {
         waterRateSettingValue = changeWaterRateSetting(waterRateSettingValue);
     }
-    
-    
 }
