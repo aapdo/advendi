@@ -222,77 +222,18 @@ long getRadius(long distanceL, long distanceR);
  */
 long getHeight(int cnt);
 
-/**
- * @brief level1 
- * purpose: 정수기의 출수를 담당하는 함수
- * @return int 
- * 
- * @include
- * 
- */
-int turnOnWater(long totalWaterVolume){
-    //유수 측정 센서에서 
-    long outWaterVolume = 0;
-
-    turnOnPump();
-    //총 추출해야하는 물의 양보다 현재 유수 측정 센서에 감지된 양이 적다면
-    while (outWaterVolume <= totalWaterVolume)
-    {
-        outWaterVolume = getCurrentWaterVolume();
-    }
-    turnOffPump();
-    
-}
-
-/**
- * @brief level2
- * purpose: 압력 펌프를 가동시켜서 물을 끌어올리는 함수
- * 
- */
-void turnOnPump();
-/**
- * @brief level2
- * purpose: 압력 펌프를 가동 중지시키는 함수
- * 
- */
-void turnOffPump();
-/**
- * @brief level2
- * purpose: 현재 출력된 물의 양이 얼마인지 유량 측정 센서를 통해 측정하는 함수
- * 
- * @return long 
- */
-long getCurrentWaterVolume();
-
-/**
- * @brief level1
- * purpose: lcd에 어떤 문자를 출력할지 정해주는 함수.
- * 기본 값으로 출수 퍼센트를 표시함.
- * 오버라이딩으로 출수 버튼을 눌렀을 때 단계에 따라 측정 중, 출수 중 등의 메세지를 띄우기.
- */
-void displayLCD(int waterRateSettingValue);
-void displayLCD(string displayStr);
-
-
-/**
- * @brief 전역 변수 
- * 서보모터는 사용자 기준 오른쪽을 기준으로 한다.
- * 
- */
-
-
 void setup(){
     //위 전역변수 값 설정
     Serial.begin(9600);
 
     stepRight = new Stepper(stepsPerRevolution,4,2,3,1);           
     stepLeft = new Stepper(stepsPerRevolution,8,6,7,5);       
+    servoL = new Servo();
+    servoR;
 }
 
 
 void loop(){
-    //디폴트는 컵 용량의 75%로 설정되어 있음.
-    int waterRateSettingValue = 75;
     //컵의 용량
     long cupVolume;
     //따라야하는 물의 용량
