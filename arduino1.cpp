@@ -1,10 +1,11 @@
 #include <string>
 #include<Servo.h>
 #include<Stepper.h>
+#include<math.h>
 
 using namespace std;
 
-double PI = 3.141592;
+double PI = M_PI;
 long DISTANCE_WIDTH = 20;//정수기 전원을 켰을 때 측정하고 값을 변경하지 않음.
 long fixedServoAngle;//서보모터를 돌리면서 마지막으로 고정된 서보모터의 각도
 
@@ -17,14 +18,25 @@ int ULTRA_LEFT_TRIG;//초음파 발사
 int ULTRA_LEFT_ECHO;//초음파 받음
 
 //스텝 모터 한번당 회전하는 각도.
+//Stepper 객체 레퍼런스
+Stepper stepRight(stepsPerRevolution,4,2,3,1);;
+Stepper stepLeft(stepsPerRevolution,8,6,7,5);;
+
+const int STEPS_PER_REVOLUTION = 64;
 //필요시 자료형 변환할 것.
 int STEPPER_ANGLE;
-//Stepper 객체 레퍼런스
-Stepper stepRight;
-Stepper stepLeft;
 
-Servo servoL;
-Servo servoR;
+
+
+void setup(){
+    //위 전역변수 값 설정
+    Serial.begin(9600);
+
+    stepRight.setSpeed(14); 
+    stepLeft.setSpeed(14); 
+}
+
+
 
 
 /*
@@ -48,33 +60,6 @@ long getDistance(int TRIG_PIN_NUMBER, int ECHO_PIN_NUMBER){
     distance = duration * 17 / 1000;
 
     return distance;
-}
-
-/**
- * @brief level1 
- * purpose: 버튼 클릭에 따른 출수 비율 변환 함수
- * @param waterRateSettingValue 
- * @return int 
- */
-int changeWaterRateSetting(int waterRateSettingValue){
-    switch (waterRateSettingValue)
-    {
-    case 75:
-        waterRateSettingValue = 25;
-        break;
-
-    case 50:
-        waterRateSettingValue = 75;
-        break; 
-
-    case 25:
-        waterRateSettingValue = 50;
-        break; 
-
-    default:
-        break;
-    }
-    return waterRateSettingValue;
 }
 
 /**
@@ -106,34 +91,15 @@ void settingServoAngle(){
         //좌우 비교 시작
     if(distanceL > distanceR)//오른쪽이 작다면 오른쪽으로 돌아야함
     {
-        if(isChangedInclination(90, 180)){//90도~180도 범위를 측정 true가 나온 순간 경향이 바뀌기 시작함.
-            fixedServoAngle;//이 때 당시의 앵글을 반환해줘야함. 전역변수를 쓰거나 포인터를 쓰거나.
-        }
+
     }else if (distanceL < distanceR)//왼쪽이 작으면 왼쪽으로 돌려야함
     {
-        if(isChangedInclination(90, 0)){//90~0도 범위를 측정 true가 나온 순간 경향이 바뀌기 시작함.
-            fixedServoAngle;//이 때 당시의 앵글을 반환해줘야함. 전역변수를 쓰거나 포인터를 쓰거나.
-        }
+
     }else{
-        fixedServoAngle = 90;
+
     }
-    turnServo(fixedServoAngle);//위에서 픽스된 각도로 서보모터를 이동시킴.
 }
 
-/**
- * @brief level2
- * purpose: 서보모터를 돌리면서 거리를 측정하는데 그 값의 경향이 바뀌었는가?
- * @param startAngle 
- * @param endAngle 
- * @return true 
- * @return false 
- * 
- * @include 
- * turnServo()
- * 
- * 증감이 바뀌는 순간 global 변수 fixedServoAngle 에 그 각도를 저장하고 return true 반환.
- */
-bool isChangedInclination(long startAngle, long endAngle);
 
 /**
  * @brief level3 
@@ -165,30 +131,32 @@ long getVolume(){
      * ULTRA_LEFT_ECHO
      * 
      */
+    vector<long> heightDevided;
+    vector<long> radius;
+
     long distanceL, distanceR; //왼쪽 초음파, 오른쪽 초음파에서 구한 값이 된다.
-    long radiusCup;//컵의 반지름
+    long cupVolume;//컵의 반지름
     long heightCup;//컵 높이
-    int cnt;//서보모터가 몇 번 움직였는지
+    //스텝 모터가 몇 번 돌아갔는지 세는 변수.
+    int stepCount = 0;
     while ((distanceR >= DISTANCE_WIDTH))//정수기 가로길이보다 초음파 결과값이 크면 멈춰야함.
     {
         distanceL = getDistance(ULTRA_LEFT_TRIG, ULTRA_LEFT_ECHO);
         distanceR = getDistance(ULTRA_RIGHT_TRIG, ULTRA_RIGHT_ECHO);
-        upSensorByMotor(stepRight);
-        upSensorByMotor(stepLeft);
+        stepUp(stepRight);
+        stepUp(stepLeft);
 
-        //반지름을 구함
-        radiusCup += getRadius(distanceL, distanceR);
-        ++cnt;
+        //반지름을 구해서 마지막 원소에 붙임.
+        radius.push_back(getRadius(distanceL, distanceR));
+        //step이 몇 번 돌아갔는지에 따라 높이가 점점 커지면서 들어갈 것임.
+        heightDevided.push_back(getHeight(stepCount));
+
+        ++stepCount;
     }
 
-    //반지름 공식 추가.
-    radiusCup = radiusCup/cnt;
-
-    //높이 구하기
-    heightCup = getHeight(cnt);
     
     //pi * r^2 * height => 부피
-    return PI *(radiusCup*radiusCup)*heightCup;
+    return integralVolume(heightDevided, radius);
     
 }
 
@@ -198,8 +166,16 @@ long getVolume(){
  * STEPPER_ANGLE을 참고하여 1call 당 1STEPPER_ANGLE씩 돌려야함.
  * @param Stpper 객체 레퍼런스를 사용함.
  */
-void upSensorByMotor(Stepper *stepperL, Stepper *stepperR);
-
+void stepUp(Stepper stepper){
+    // 360/32 = 30 도씩 돌아감. 
+    // 원주가 19니까 19/(30/360) = 1.5cm 
+    stepper.step(stepsPerRevolution);
+    ++stepCount;
+    delay(100);
+}
+void stepDown(Stepper stepper){
+    stepper.step(-stepsPerRevolution);
+}
 //global 변수 fixedServoAngle을 사용하여 계산할 것.
 //미구현된 사항: 서보모터 각도에 따른 길이 계산 공식 미적용 추가 바람.
 /**
@@ -217,21 +193,51 @@ long getRadius(long distanceL, long distanceR);
 /**
  * @brief level2
  * purpose: 스텝모터의 회전당 올라가는 높이와 회전 수를 곱하여 컵의 높이를 구하는 함수.
- * @param cnt 
+ * @param stepCount 
  * @return long 
  */
-long getHeight(int cnt);
+long getHeight(int stepCount);
 
-void setup(){
-    //위 전역변수 값 설정
-    Serial.begin(9600);
 
-    stepRight = new Stepper(stepsPerRevolution,4,2,3,1);           
-    stepLeft = new Stepper(stepsPerRevolution,8,6,7,5);       
-    servoL = new Servo();
-    servoR;
+
+
+//부피를 구하기 위한 직선 함수.
+float volumeFunction(float x, vector<long> heightDevided, vector<long> radius) 
+{
+    return pow(((radius[i+1] - radius[i]) / (heightDevided[i+1]-heightDevided[i])) * ( x - heightDevided[i]) + radius[i],2)PI; 
+}
+//
+float integrationVolume(float from, float to, float delta, vector<long> heightDevided, vector<long> radius)
+{
+    float sum = 0.;
+    for (float x = from; x < to; x += delta) {
+        sum += ((volumeFunction(x, heightDevided, radius) + volumeFunction(x + delta, heightDevided, radius)) / 2.);
+    }
+    // 여기 에러 날거같은데..?
+    return abs(sum delta);
+}
+//컵을 직선으로 분할해서 부피를 구함.
+float integralVolume(vector<long> heightDevided, vector<long> radius)
+{
+
+    float sum = 0;
+    float delta = 0.0001;
+    for(int i = 0;i<(sizeof(radius)/sizeof(*radius))-1; i++)
+    {
+        float from = heightDevided[i];
+        float to = heightDevided[i + 1];
+        float a = integrationVolume(from, to, delta, heightDevided, radius);
+        sum = sum + a;
+    }
+
+    return sum;
 }
 
+
+//반대편 아두이노로 정보를 출력하는 함수
+void outputData(int data);
+void outputData(string data);
+void outputData(long data);
 
 void loop(){
     //컵의 용량
