@@ -154,8 +154,6 @@ long getVolume(){
         ++stepCount;
     }
 
-    
-    //pi * r^2 * height => 부피
     return integralVolume(heightDevided, radius);
     
 }
