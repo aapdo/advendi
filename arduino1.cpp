@@ -75,7 +75,7 @@ long getVolume(){
     vector<double radius[40];
     */
     double heightDevided[50];
-    double radius[40];
+    double radius[50];
 
     //왼쪽 초음파, 오른쪽 초음파에서 구한 값이 된다.
     double distanceL, distanceR; 
