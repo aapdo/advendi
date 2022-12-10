@@ -10,8 +10,8 @@ volatile uint16_t pulses = 0;               // 데이터 유형 설정
 volatile uint8_t lastflowpinstate;
 volatile uint32_t lastflowratetimer = 0;
 volatile float flowrate;
-int WaterPumpA_L = 8;
-int WaterPumpA_R = 9;
+int WaterPumpA_L = 6;
+int WaterPumpA_R = 5;
 int change_button = 10;
 int flow_button = 11;
 String displayStr = "loading...";
