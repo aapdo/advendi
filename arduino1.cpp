@@ -16,10 +16,11 @@ int ULTRA_LEFT_ECHO = 13;//초음파 받음
 
 //스텝 모터 한번당 회전하는 각도.
 //Stepper 객체 레퍼런스
+const int stepsPerRevolution = 64;  //원래 64;
+
 Stepper stepRight(stepsPerRevolution, 2, 3, 4, 5);
 Stepper stepLeft(stepsPerRevolution, 6, 7, 8, 9);
 
-const int stepsPerRevolution = 64;  //원래 64;
 //필요시 자료형 변환할 것.
 double STEPPER_ANGLE = 11.25;
 
@@ -209,31 +210,30 @@ double getHeight(int stepCount){
 
 
 //부피를 구하기 위한 직선 함수.
-float volumeFunction(float x, vector<long> heightDevided, vector<long> radius) 
+float volumeFunction(float x, double *heightDevided, double *radius) 
 {
-    return pow(((radius[i+1] - radius[i]) / (heightDevided[i+1]-heightDevided[i])) * ( x - heightDevided[i]) + radius[i],2)PI; 
+    return pow( (((radius[i+1] - radius[i]) / (heightDevided[i+1]-heightDevided[i])) * ( x - heightDevided[i]) + radius[i]) ,2)PI; 
 }
 //
-float integrationVolume(float from, float to, float delta, vector<long> heightDevided, vector<long> radius)
+float integrationVolume(float from, float to, float delta, double *heightDevided, double *radius)
 {
     float sum = 0.;
     for (float x = from; x < to; x += delta) {
-        sum += ((volumeFunction(x, heightDevided, radius) + volumeFunction(x + delta, heightDevided, radius)) / 2.);
+        sum += ((volumeFunction(x, &heightDevided, &radius) + volumeFunction(x + delta, &heightDevided, &radius)) / 2.);
     }
     // 여기 에러 날거같은데..?
     return abs(sum*delta);
 }
 //컵을 직선으로 분할해서 부피를 구함.
-float integralVolume(vector<long> heightDevided, vector<long> radius)
+float integralVolume(double *heightDevided, double *radius)
 {
-
     float sum = 0;
     float delta = 0.0001;
-    for(int i = 0;i<(sizeof(radius)/sizeof(*radius))-1; i++)
+    for(int i = 0;i<(sizeof(radius)/sizeof(radius[0]))-1; i++)
     {
         float from = heightDevided[i];
         float to = heightDevided[i + 1];
-        float a = integrationVolume(from, to, delta, heightDevided, radius);
+        float a = integrationVolume(from, to, delta, &heightDevided, &radius);
         sum = sum + a;
     }
 

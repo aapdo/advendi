@@ -183,6 +183,7 @@ void loop(){
     if(digitalRead(change_button) == HIGH){
         changeWaterRateSetting();
         displayLCD(waterRateSettingValue);
+        delay(500);
     }
 
     if(digitalRead(flow_button) == HIGH) {
