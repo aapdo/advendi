@@ -155,29 +155,29 @@ double getHeight(int stepCount){
 int i = 0;
 
 //부피를 구하기 위한 직선 함수.
-float volumeFunction(float x, double *heightDevided, double *radius) 
+double volumeFunction(double x, double *heightDevided, double *radius) 
 {
     return pow( (((radius[i+1] - radius[i]) / (heightDevided[i+1]-heightDevided[i])) * ( x - heightDevided[i]) + radius[i]) ,2)PI; 
 }
 //
-float integrationVolume(float from, float to, float delta, double *heightDevided, double *radius)
+double integrationVolume(double from, double to, double delta, double *heightDevided, double *radius)
 {
-    float sum = 0.;
-    for (float x = from; x < to; x += delta) {
-        sum += ((volumeFunction(x, &heightDevided, &radius) + volumeFunction(x + delta, &heightDevided, &radius)) / 2.);
+    double sum = 0.;
+    for (double x = from; x < to; x += delta) {
+        sum += ((volumeFunction(x, heightDevided, radius) + volumeFunction(x + delta, heightDevided, radius)) / 2.);
     }
     return abs(sum*delta);
 }
 //컵을 직선으로 분할해서 부피를 구함.
-float integralVolume(double *heightDevided, double *radius)
+double integralVolume(double *heightDevided, double *radius)
 {
-    float sum = 0;
-    float delta = 0.0001;
+    double sum = 0;
+    double delta = 0.0001;
     for(i = 0;i<(sizeof(radius)/sizeof(radius[0]))-1; i++)
     {
-        float from = heightDevided[i];
-        float to = heightDevided[i + 1];
-        float a = integrationVolume(from, to, delta, &heightDevided, &radius);
+        double from = heightDevided[i];
+        double to = heightDevided[i + 1];
+        double a = integrationVolume(from, to, delta, heightDevided, radius);
         sum = sum + a;
     }
 
