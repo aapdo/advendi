@@ -1,4 +1,3 @@
-#include<Servo.h>
 #include<Stepper.h>
 
 using namespace std;
@@ -35,10 +34,6 @@ void setup(){
     pinMode(ULTRA_RIGHT_ECHO, INPUT);
     pinMode(ULTRA_LEFT_TRIG, OUTPUT);
     pinMode(ULTRA_LEFT_ECHO, INPUT);
-
-        
-    ServoR.attach(A3);
-    ServoL.attach(A4);
 }
 
 
@@ -57,61 +52,12 @@ double getDistance(int TRIG_PIN_NUMBER, int ECHO_PIN_NUMBER){
     delayMicroseconds(10);
     digitalWrite(TRIG_PIN_NUMBER, LOW);
 
-    duration = pulseIn(ECHO, HIGH); //물체에 반사되어돌아온 초음파의 시간을 변수에 저장합니다.
+    duration = pulseIn(ECHO_PIN_NUMBER, HIGH); //물체에 반사되어돌아온 초음파의 시간을 변수에 저장합니다.
 
     //cm 로 환산
     distance = duration * 17 / 1000;
 
     return distance;
-}
-
-/**
- * @brief level1 
- * purpose: Servo motor의 각도를 셋팅해주는 함수
- * 
- * @include 
- * global: getDistance()
- * level2: isChangedInclination()
- * level3: turnServo()
- * 
- * @return long fixedServoAngle
- */
-void settingServoAngle(){
-    /**
-     * global value
-     * long fixedServoAngle;
-     * 
-     */
-    //local value
-    long distanceR, distanceL;
-
-    //서보모터 작동 시작
-    turnServo(95);//서보모터를 95도로 설정
-    distanceR = getDistance();
-    turnServo(85);//서보모터를 85도로 설정
-    distanceL = getDistance();
-        
-        //좌우 비교 시작
-    if(distanceL > distanceR)//오른쪽이 작다면 오른쪽으로 돌아야함
-    {
-
-    }else if (distanceL < distanceR)//왼쪽이 작으면 왼쪽으로 돌려야함
-    {
-
-    }else{
-
-    }
-}
-
-
-/**
- * @brief level3 
- * purpose: angle 각도로 서보모터를 돌림.
- * 
- * @param angle 
- */
-void turnServo(Servo servo, int angle){
-    servo.write(angle);
 }
 
 /**
@@ -175,8 +121,6 @@ void stepDown(Stepper stepper){
     stepper.step(-stepsPerRevolution);
     delay(100);
 }
-//global 변수 fixedServoAngle을 사용하여 계산할 것.
-//미구현된 사항: 서보모터 각도에 따른 길이 계산 공식 미적용 추가 바람.
 /**
  * @brief level2
  * purpose: 좌우의 초음파 센서에서 측정된 값을 바탕으로 컵의 반지름을 구하는 함수.
@@ -208,6 +152,7 @@ double getHeight(int stepCount){
 
 
 
+int i = 0;
 
 //부피를 구하기 위한 직선 함수.
 float volumeFunction(float x, double *heightDevided, double *radius) 
@@ -221,7 +166,6 @@ float integrationVolume(float from, float to, float delta, double *heightDevided
     for (float x = from; x < to; x += delta) {
         sum += ((volumeFunction(x, &heightDevided, &radius) + volumeFunction(x + delta, &heightDevided, &radius)) / 2.);
     }
-    // 여기 에러 날거같은데..?
     return abs(sum*delta);
 }
 //컵을 직선으로 분할해서 부피를 구함.
@@ -229,7 +173,7 @@ float integralVolume(double *heightDevided, double *radius)
 {
     float sum = 0;
     float delta = 0.0001;
-    for(int i = 0;i<(sizeof(radius)/sizeof(radius[0]))-1; i++)
+    for(i = 0;i<(sizeof(radius)/sizeof(radius[0]))-1; i++)
     {
         float from = heightDevided[i];
         float to = heightDevided[i + 1];
