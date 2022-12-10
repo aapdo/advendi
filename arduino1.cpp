@@ -1,11 +1,9 @@
-#include <string>
 #include<Servo.h>
 #include<Stepper.h>
-#include<math.h>
 
 using namespace std;
 
-double PI = M_PI;
+double PI = 3.141592653589793238462643383;
 double DISTANCE_WIDTH = 20;//정수기 전원을 켰을 때 측정하고 값을 변경하지 않음.
 
 //오른쪽 초음파 센서 
@@ -125,8 +123,12 @@ void turnServo(Servo servo, int angle){
  * 
  */
 long getVolume(){
+    /*
     vector<double> heightDevided;
-    vector<double> radius;
+    vector<double radius[40];
+    */
+    double heightDevided[50];
+    double radius[40];
 
     //왼쪽 초음파, 오른쪽 초음파에서 구한 값이 된다.
     double distanceL, distanceR; 
@@ -140,9 +142,12 @@ long getVolume(){
         stepUp(stepLeft);
 
         //반지름을 구해서 마지막 원소에 붙임.
-        radius.push_back(getRadius(distanceL, distanceR));
+        //radius.push_back(getRadius(distanceL, distanceR));
         //step이 몇 번 돌아갔는지에 따라 높이가 점점 커지면서 들어갈 것임.
-        heightDevided.push_back(getHeight(stepCount));
+        //heightDevided.push_back(getHeight(stepCount));
+
+        radius[stepCount] = getRadius(distanceL, distanceR);
+        heightDevided[stepCount] = getHeight(stepCount);
 
         ++stepCount;
     }

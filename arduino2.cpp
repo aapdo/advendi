@@ -1,4 +1,3 @@
-#include <string>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
@@ -15,6 +14,7 @@ int WaterPumpA_R = 5;
 int change_button = 10;
 int flow_button = 11;
 String displayStr = "loading...";
+int waterRateSettingValue = 75;
 
 void setup(){
     Serial.begin(9600);
@@ -54,7 +54,7 @@ void setup(){
  * @param waterRateSettingValue 
  * @return int 
  */
-int changeWaterRateSetting(int waterRateSettingValue){
+void changeWaterRateSetting(){
     switch (waterRateSettingValue)
     {
     case 75:
@@ -72,7 +72,6 @@ int changeWaterRateSetting(int waterRateSettingValue){
     default:
         break;
     }
-    return waterRateSettingValue;
 }
 
 
@@ -179,11 +178,10 @@ void useInterrupt(boolean v) { // bool값에 따른 출력 설정
 
 void loop(){
     //디폴트는 컵 용량의 75%로 설정되어 있음.
-    int waterRateSettingValue = 75;
     double waterVolume;
 
     if(digitalRead(change_button) == HIGH){
-        changeWaterRateSetting(waterRateSettingValue);
+        changeWaterRateSetting();
         displayLCD(waterRateSettingValue);
     }
 
