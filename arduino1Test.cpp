@@ -68,7 +68,7 @@ double getDistance(int TRIG_PIN_NUMBER, int ECHO_PIN_NUMBER){
  * level2: upSensorByMotor()
  * 
  */
-long getVolume(int stepCount){
+double getVolume(){
     /*
     vector<double> heightDevided;
     vector<double radius[40];
@@ -80,25 +80,24 @@ long getVolume(int stepCount){
     double distanceL, distanceR; 
     //스텝 모터가 몇 번 돌아갔는지 세는 변수.
     int stepCount = 0;
-    while ((distanceR <= DISTANCE_WIDTH))//정수기 가로길이보다 초음파 결과값이 크면 멈춰야함.
+    while (true)//정수기 가로길이보다 초음파 결과값이 크면 멈춰야함.
     {
         distanceR = getDistance(ULTRA_RIGHT_TRIG, ULTRA_RIGHT_ECHO);
-        stepUp(stepRight);
         distanceL = getDistance(ULTRA_LEFT_TRIG, ULTRA_LEFT_ECHO);
-        stepUp(stepLeft);
-        delay(300);
-
-        //반지름을 구해서 마지막 원소에 붙임.
-        //radius.push_back(getRadius(distanceL, distanceR));
-        //step이 몇 번 돌아갔는지에 따라 높이가 점점 커지면서 들어갈 것임.
-        //heightDevided.push_back(getHeight(stepCount));
-
+        if (distanceR >= DISTANCE_WIDTH)
+        {
+            break;
+        }
+        
         radius[stepCount] = getRadius(distanceL, distanceR);
         heightDevided[stepCount] = getHeight(stepCount);
 
+        stepUp(stepRight);
+        stepUp(stepLeft);
         ++stepCount;
-    }
 
+        delay(1000);
+    }
     return integralVolume(heightDevided, radius, stepCount);
     
 }
@@ -128,10 +127,8 @@ void stepDown(Stepper stepper){
  * @return long 
  */
 double getRadius(double Rdistance, double Ldistance){
-    double Radius;
-    Radius = 20 - (Rdistance + Ldistance);
+    return 20.0 - (Rdistance + Ldistance);
     
-    return Radius;
 }
 
 //cnt 와
@@ -201,7 +198,7 @@ void loop(){
 
     //출수 버튼이 눌린 것이 감지되었을때
     if(Serial.available()){
-        boolean getStartButtonDown = (boolean)Serial.read();
+        bool getStartButtonDown = (bool)Serial.read();
         if(getStartButtonDown){
             cupVolume = getVolume();
             Serial.print(0);
