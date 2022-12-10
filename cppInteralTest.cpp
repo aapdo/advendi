@@ -1,43 +1,45 @@
 #include <iostream>
 #include <string>
+#include <cmath>
 using namespace std;
+float heightDevided[4] = { 0,1,2,3 }; //x좌표
+float radius[4] = {1,1,1,1}; //y좌표
+double PI = 3.141592;
+int i = 0;
 
-
-float function_x (float x){
-    printf("return: %f\n", (0.1667*x)*(0.1667*x));
-    //return (0.5 *x)*(0.5*x)*(3.141592);
-    return (0.1667*x+5)*(0.1667*x+5)*3.141592;
+float function_x(float x) 
+{
+    return pow(((radius[i+1] - radius[i]) / (heightDevided[i+1]-heightDevided[i])) * ( x - heightDevided[i]) + radius[i],2)PI; 
 }
 
-float inte_0D(float from, float to, float delta){
-    float sum = 0;
-    for (float x = from; x < to; x += delta){
-        printf("x: %f", x);
-        sum += (function_x(x));
+float integration_1D(float from, float to, float delta)
+{
+    float sum = 0.;
+    for (float x = from; x < to; x += delta) {
+        sum += ((function_x(x) + function_x(x + delta)) / 2.);
     }
-    return sum*delta;
+    return abs(sum*delta);
 }
 
-float inte_1D(float from, float to, float delta){
+float getVolume()
+{
+
     float sum = 0;
-    for (float x = from; x < to; x += delta){
-        sum += ( (function_x(x) + function_x(x+delta)) /2  );
+    float delta = 0.0001;
+    for(i = 0;i<(sizeof(radius)/sizeof(*radius))-1; i++)
+    {
+        float from = heightDevided[i];
+        float to = heightDevided[i + 1];
+        float a = integration_1D(from, to, delta);
+        sum = sum + a;
+
     }
-    return sum*delta;
+
+    return sum;
+
 }
 
 int main(){
-    float from = 0.;
-    float to = 10.;
-    float delta = 0.25;
-
-    printf("%f", inte_0D(from, to, delta));
-
-/*
-    for (delta = 1.; delta > 0.0001; delta /= 2){
-        printf("delta = %f, 0: %f, 1d: %f\n", delta, inte_0D(from, to, delta), inte_1D(from, to, delta));
-    }
-*/
+    cout << getVolume << endl;
     return 0;
-    
 }
