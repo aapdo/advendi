@@ -83,17 +83,21 @@ void turnOnPump(double waterVolume){
     //pulses = 0;
     analogWrite(WaterPumpA_L, 0);
     analogWrite(WaterPumpA_R, 255);
-    Serial.print(waterVolume);
+    double currentWater;
     while (true)
     {
-      Serial.print(getCurrentWaterVolume() );
-        if( waterVolume <= getCurrentWaterVolume() ){
-          turnReversePump();
-          delay(3000);
-          turnOffPump();
-          break;
-        }
+      currentWater = getCurrentWaterVolume();
+      Serial.println(currentWater);
+      if( waterVolume <= currentWater ){
+        //turnReversePump();
+        //delay(3000);
+        turnOffPump();
+        break;
+      }
     }
+    turnReversePump();
+    delay(1000);
+    turnOffPump();
     // 유량 측정 센서 초기화;
     
 }
@@ -117,8 +121,8 @@ void turnOffPump(){
  * 
  * @return long 
  */
-float getCurrentWaterVolume() {
-    float liters = pulses;
+double getCurrentWaterVolume() {
+    double liters = pulses;
     liters /= 7.5;
     liters /= 60.0;
     delay(100);
@@ -189,12 +193,13 @@ void loop(){
     }
 
     if(digitalRead(flow_button) == HIGH) {
-        Serial.print("click");
         displayLCD(displayStr);
-        //turnOnPump(400);
+        turnOnPump(100*((double)waterRateSettingValue/100));
     }
+
     if(Serial.available()){
         waterVolume = (double)Serial.read() * waterRateSettingValue;
         turnOnPump(waterVolume);
     }
+    
 }
