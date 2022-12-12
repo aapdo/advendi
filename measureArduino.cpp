@@ -99,7 +99,6 @@ double getVolume(){
         delay(1000);
     }
     return integralVolume(heightDevided, radius, stepCount);
-    
 }
 
 /**
@@ -148,12 +147,12 @@ double getHeight(int stepCount){
 
 int i = 0;
 
-//부피를 구하기 위한 직선 함수.
+//높이에 대한 반지름의 직선을 x축 회전시켜 얻은 회전체의 단면
 double volumeFunction(double x, double *heightDevided, double *radius) 
 {
     return pow( (((radius[i+1] - radius[i]) / (heightDevided[i+1]-heightDevided[i])) * ( x - heightDevided[i]) + radius[i]) ,2)*PI; 
 }
-//
+//위 함수에서 구한 원기둥들을 합하여 하나의 회전체의 부피를 구함.
 double integrationVolume(double from, double to, double delta, double *heightDevided, double *radius)
 {
     double sum = 0.;
@@ -175,7 +174,6 @@ double integralVolume(double *heightDevided, double *radius, int cnt)
         double a = integrationVolume(from, to, delta, heightDevided, radius);
         sum = sum + a;
     }
-
     return sum;
 }
 
