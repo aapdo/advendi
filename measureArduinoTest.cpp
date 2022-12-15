@@ -2,7 +2,7 @@
 
 using namespace std;
 
-double DISTANCE_WIDTH = 20;//정수기 전원을 켰을 때 측정하고 값을 변경하지 않음.
+double DISTANCE_WIDTH = 15;//정수기 전원을 켰을 때 측정하고 값을 변경하지 않음.
 
 //오른쪽 초음파 센서 
 const int ULTRA_RIGHT_TRIG = 11;//초음파 발사
@@ -14,7 +14,7 @@ const int ULTRA_LEFT_ECHO = 13;//초음파 받음
 
 //스텝 모터 한번당 회전하는 각도.
 //Stepper 객체 레퍼런스
-const int stepsPerRevolution = 64;  //원래 64;
+const int stepsPerRevolution = 256;
 
 const int stepR_IN1 = 2;
 const int stepR_IN2 = 4;
@@ -36,8 +36,8 @@ void setup(){
     //위 전역변수 값 설정
     Serial.begin(9600);
 
-    stepRight.setSpeed(5); 
-    stepLeft.setSpeed(5); 
+    stepRight.setSpeed(30); 
+    stepLeft.setSpeed(30); 
 
     pinMode(ULTRA_RIGHT_TRIG, OUTPUT);
     pinMode(ULTRA_RIGHT_ECHO, INPUT);
@@ -78,37 +78,61 @@ double getDistance(int TRIG_PIN_NUMBER, int ECHO_PIN_NUMBER){
  * level2: upSensorByMotor()
  * 
  */
+int stepCount = 0;
 double getVolume(){
     /*
     vector<double> heightDevided;
     vector<double radius[40];
     */
-    double heightDevided[50];
-    double radius[50];
+    double heightDevided[2] = {0, 0};
+    //double heightDevided = 0.7;
+    double radius[2] = {0, 0};
 
     //왼쪽 초음파, 오른쪽 초음파에서 구한 값이 된다.
     double distanceL, distanceR; 
     //스텝 모터가 몇 번 돌아갔는지 세는 변수.
-    int stepCount = 0;
+    double cupVolume = 0.0;
     while (true)//정수기 가로길이보다 초음파 결과값이 크면 멈춰야함.
     {
-        distanceR = getDistance(ULTRA_RIGHT_TRIG, ULTRA_RIGHT_ECHO);
+        //distanceR = getDistance(ULTRA_RIGHT_TRIG, ULTRA_RIGHT_ECHO);
         distanceL = getDistance(ULTRA_LEFT_TRIG, ULTRA_LEFT_ECHO);
-        if (distanceR >= DISTANCE_WIDTH)
+        /*
+        Serial.print(stepCount);
+        Serial.print(" left: ");
+        Serial.print(distanceL);
+        Serial.print(" right: ");   
+        Serial.print(distanceR);
+        */
+     
+        if (distanceL >= DISTANCE_WIDTH)
         {
             break;
         }
-        
-        radius[stepCount] = getRadius(distanceL, distanceR);
-        heightDevided[stepCount] = getHeight(stepCount);
+        radius[0] = radius[1];
+        radius[1] = getRadius(distanceL, distanceL);
 
-        stepUp(stepRight);
+        heightDevided[0] = heightDevided[1];
+        heightDevided[1] = 0.7*(stepCount);
+/*
+        Serial.print(" r: ");
+        Serial.print(radius[1]);
+        Serial.print(" h: ");
+        Serial.print(heightDevided[1]);
+        */
+
+        //stepUp(stepRight);
         stepUp(stepLeft);
         ++stepCount;
 
-        delay(1000);
+        cupVolume += integralVolume(radius, heightDevided);
+        /*
+        Serial.print(" volume: ");
+        Serial.print(cupVolume);
+
+        Serial.println();
+        */
     }
-    return integralVolume(heightDevided, radius, stepCount);
+    return cupVolume;
 }
 
 /**
@@ -117,14 +141,10 @@ double getVolume(){
  * STEPPER_ANGLE을 참고하여 1call 당 1STEPPER_ANGLE씩 돌려야함.
  * @param Stpper 객체 레퍼런스를 사용함.
  */
-// 한 번 작동시마다 11.25도만큼 움직임 ( 각도 변환 가능 )
-void stepUp(Stepper stepper){
-    // 360/32 = 30 도씩 돌아감. 
-    // 원주가 19니까 19/(30/360) = 1.5cm 
-    // 작동 한번에 0.59cm
+void stepDown(Stepper stepper){
     stepper.step(stepsPerRevolution);
 }
-void stepDown(Stepper stepper){
+void stepUp(Stepper stepper){
     stepper.step(-stepsPerRevolution);
     delay(300);
 }
@@ -136,8 +156,7 @@ void stepDown(Stepper stepper){
  * @return long 
  */
 double getRadius(double Rdistance, double Ldistance){
-    return 20.0 - (Rdistance + Ldistance);
-    
+    return DISTANCE_WIDTH - (Rdistance + Ldistance);
 }
 
 //cnt 와
@@ -150,44 +169,34 @@ double getRadius(double Rdistance, double Ldistance){
  * @return long 
  */
 double getHeight(int stepCount){
-  return stepCount * 0.59;
+  return stepCount * 0.7;
 }
 
-
-
-int i = 0;
-
 //높이에 대한 반지름의 직선을 x축 회전시켜 얻은 회전체의 단면
-double volumeFunction(double x, double *heightDevided, double *radius) 
+double areaFunction(double x, double *heightDevided, double *radius) 
 {
-    return pow( (((radius[i+1] - radius[i]) / (heightDevided[i+1]-heightDevided[i])) * ( x - heightDevided[i]) + radius[i]) ,2)*PI; 
+    return pow( (((radius[1] - radius[0]) / (heightDevided[1]-heightDevided[0])) * ( x - heightDevided[0]) + radius[0]) ,2)*PI; 
 }
 //위 함수에서 구한 원기둥들을 합하여 하나의 회전체의 부피를 구함.
 double integrationVolume(double from, double to, double delta, double *heightDevided, double *radius)
 {
     double sum = 0.;
     for (double x = from; x < to; x += delta) {
-        sum += ((volumeFunction(x, heightDevided, radius) + volumeFunction(x + delta, heightDevided, radius)) / 2.);
-
+        sum += ((areaFunction(x, heightDevided, radius) + areaFunction(x + delta, heightDevided, radius)) / 2.);
+        Serial.print(" sum: ");
+        Serial.print(sum);
     }
     return abs(sum*delta);
 }
 //컵을 직선으로 분할해서 부피를 구함.
-double integralVolume(double *heightDevided, double *radius, int cnt)
+double integralVolume(double *heightDevided, double *radius)
 {
-    double sum = 0;
     double delta = 0.25;
-    double from;
-    double to;
-    double a;
-    for(i = 0;i<cnt-1; i++)
-    {
-        from = heightDevided[i];
-        to = heightDevided[i + 1];
-        a = integrationVolume(from, to, delta, heightDevided, radius);
-        sum = sum + a;
-    }
-    return sum;
+
+    double from = heightDevided[0];
+    double to = heightDevided[1];
+
+    return integrationVolume(from, to, delta, heightDevided, radius);
 }
 
 //반대편 아두이노로 정보를 출력하는 함수
@@ -201,19 +210,31 @@ void outputData(double data){
     Serial.print(data);
 }
 
+void reset(){
+    for (int i = 0; i < stepCount; i++)
+    {
+        //stepDown(stepRight);
+        stepDown(stepLeft);
+    }
+    stepCount = 0;
+    
+}
+
 void loop(){
     //컵의 용량
     double cupVolume;
     //출수 버튼이 눌렸는가?
     bool getStartButtonDown = false;
+    
 
-    //출수 버튼이 눌린 것이 감지되었을때
+    delay(500000);
+
     if(Serial.available()){
         bool getStartButtonDown = (bool)Serial.read();
         if(getStartButtonDown){
             cupVolume = getVolume();
-            Serial.print(0);
             outputData(cupVolume);
+            reset();
         }
     }
 }

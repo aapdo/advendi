@@ -2,8 +2,8 @@
 #include <string>
 #include <cmath>
 using namespace std;
-float heightDevided[4] = { 0,1,2,3 }; //x좌표
-float radius[4] = {1,1,1,1}; //y좌표
+float heightDevided[4] = { 0,3.1,4.4, 3.2}; //x좌표
+float radius[4] = {0, 0.7, 1.4, 2.1}; //y좌표
 double PI = 3.141592;
 int i = 0;
 

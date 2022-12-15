@@ -9,10 +9,10 @@ volatile uint16_t pulses = 0;               // 데이터 유형 설정
 volatile uint8_t lastflowpinstate;
 volatile uint32_t lastflowratetimer = 0;
 volatile float flowrate;
-int WaterPumpA_L = 6;
-int WaterPumpA_R = 5;
-int change_button = 10;
-int flow_button = 9;
+const int WaterPumpA_L = 6;
+const int WaterPumpA_R = 5;
+const int change_button = 10;
+const int flow_button = 9;
 String displayStr = "loading...";
 int waterRateSettingValue = 75;
 
@@ -21,9 +21,9 @@ void setup(){
     pinMode(FLOWSENSORPIN, INPUT);
     pinMode(change_button, INPUT);
     pinMode(flow_button, INPUT);
-
-  
     digitalWrite(FLOWSENSORPIN, HIGH);
+
+
     lastflowpinstate = digitalRead(FLOWSENSORPIN);
     useInterrupt(true);
 
@@ -31,13 +31,8 @@ void setup(){
   
     lcd.backlight(); // LCD초기 설정  
 
-    lcd.setCursor(0,0);
-    lcd.print("25%  ");
-    lcd.print("50%  ");
-    lcd.print("75%"); 
+    displayBeiginLCD();//LCD 초기 화면
 
-    lcd.setCursor(0,1);
-    lcd.print("Choose amount!");
 
     pinMode(WaterPumpA_L, OUTPUT);
     pinMode(WaterPumpA_R, OUTPUT); 
@@ -99,7 +94,6 @@ void turnOnPump(double waterVolume){
     delay(1000);
     turnOffPump();
     // 유량 측정 센서 초기화;
-    
 }
 /**
  * @brief level2
@@ -136,7 +130,7 @@ double getCurrentWaterVolume() {
  */
 void displayLCD(int waterRateSettingValue) {
     lcd.clear();
-    lcd.print(waterRateSettingValue);
+    lcd.print("water rate: "+waterRateSettingValue);
     lcd.print("%");
 }
 
@@ -145,6 +139,15 @@ void displayLCD(String displayStr) {
     lcd.print(waterRateSettingValue);
     lcd.print("% ");
     lcd.print("START!");
+}
+void displayBeiginLCD(){
+    lcd.setCursor(0,0);
+    lcd.print("25%  ");
+    lcd.print("50%  ");
+    lcd.print("75%"); 
+
+    lcd.setCursor(0,1);
+    lcd.print("Choose amount!");
 }
 
 //반대편 아두이노로 정보를 출력하는 함수
@@ -182,6 +185,12 @@ void useInterrupt(boolean v) { // bool값에 따른 출력 설정
     }
 }
 
+void reset(){
+    lastflowratetimer = 0;
+    pulses = 0;
+    displayBeiginLCD();
+}
+
 void loop(){
     //디폴트는 컵 용량의 75%로 설정되어 있음.
     double waterVolume;
@@ -194,12 +203,11 @@ void loop(){
 
     if(digitalRead(flow_button) == HIGH) {
         displayLCD(displayStr);
-        turnOnPump(100*((double)waterRateSettingValue/100));
+        //turnOnPump(100*((double)waterRateSettingValue/100));
     }
 
     if(Serial.available()){
         waterVolume = (double)Serial.read() * waterRateSettingValue;
         turnOnPump(waterVolume);
     }
-    
 }
